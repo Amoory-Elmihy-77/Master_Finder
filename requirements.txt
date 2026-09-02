@@ -1,7 +1,9 @@
 streamlit
 langchain
-langchain-google-genai
+langchain-groq
 langchain-community
+duckduckgo-search
+ddgs
 langgraph
 langgraph-checkpoint-sqlite
 google-genai

@@ -3,6 +3,8 @@ from prompts.professor_prompt import PROFESSOR_PROMPT
 from services.model import get_llm
 from agents.research_agent import create_research_agent
 
+_MAX_RESEARCH_CHARS = 4000
+
 
 def research_professors(
     university: str,
@@ -10,31 +12,11 @@ def research_professors(
 ):
     agent = create_research_agent()
 
-    query = f"""
-Find up to 10 current professors/researchers at:
-
-University:
-{university}
-
-Field:
-{field}
-
-Prioritize researchers whose work is directly relevant.
-
-For every researcher find:
-- name
-- current position
-- research areas
-- official university profile URL
-- official university email if publicly listed
-- source URL
-
-Never guess or construct an email address.
-If no public official email is found, say:
-"Not publicly listed."
-
-Use official university sources whenever possible.
-"""
+    query = (
+        f"Find up to 5 current professors/researchers at {university} "
+        f"working in {field}. For each: name, position, research areas, "
+        f"official profile URL, official email if publicly listed."
+    )
 
     result = agent.invoke(
         {
@@ -67,7 +49,7 @@ def extract_professors(
         {
             "university": university,
             "field": field,
-            "research": research,
+            "research": research[:_MAX_RESEARCH_CHARS],
         }
     )
 

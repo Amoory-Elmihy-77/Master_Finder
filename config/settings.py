@@ -4,11 +4,11 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.6-flash")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+GROQ_MODEL = os.getenv("GROQ_MODEL", "openai/gpt-oss-20b")
 
-if not GEMINI_API_KEY:
+if not GROQ_API_KEY or GROQ_API_KEY == "your_groq_api_key_here":
     raise RuntimeError(
-        "GEMINI_API_KEY is missing. Add it to your .env file. "
-        "Get a free key at https://aistudio.google.com/apikey"
+        "GROQ_API_KEY is missing. Add it to your .env file. "
+        "Get a free key at https://console.groq.com/keys"
     )

@@ -36,6 +36,17 @@ def professor_key(professor) -> str:
     return f"{professor.university}::{professor.name}"
 
 
+def format_api_error(e: Exception) -> str:
+    error_str = str(e).lower()
+    if "429" in error_str and "quota" in error_str:
+        return "You have exceeded your API quota. Please check your billing details or wait until your quota resets."
+    elif "429" in error_str:
+        return "The AI model is rate limited. Please wait a moment and try again."
+    elif "503" in error_str:
+        return "The AI model is currently experiencing high demand. Please try again in a few minutes."
+    return str(e)
+
+
 # =====================================================
 # Session state — loaded once from SQLite so favorites,
 # CV, last search results, and chat survive a refresh
@@ -122,7 +133,7 @@ with st.sidebar:
                     storage.save_candidate(candidate)
 
                 except Exception as e:
-                    st.error(f"CV analysis failed: {e}")
+                    st.error(f"CV analysis failed: {format_api_error(e)}")
 
         if st.session_state.candidate:
 
@@ -327,7 +338,7 @@ def render_program_card(program, index, key_prefix):
                             "Check the 👨‍🏫 Professors tab for results."
                         )
                     except Exception as e:
-                        st.error(f"Professor research failed: {e}")
+                        st.error(f"Professor research failed: {format_api_error(e)}")
 
         with col_b:
             if st.session_state.candidate is not None:
@@ -344,7 +355,7 @@ def render_program_card(program, index, key_prefix):
                             )
                             st.session_state.matches[fav_key] = match
                         except Exception as e:
-                            st.error(f"Matching failed: {e}")
+                            st.error(f"Matching failed: {format_api_error(e)}")
             else:
                 st.caption(
                     "Upload your CV in the sidebar to analyze fit."
@@ -420,7 +431,7 @@ with program_tab:
                         )
 
                 except Exception as e:
-                    st.error(f"Research failed: {e}")
+                    st.error(f"Research failed: {format_api_error(e)}")
 
     if st.session_state.programs:
         for index, program in enumerate(st.session_state.programs):
@@ -643,7 +654,7 @@ with chat_tab:
                     response = result["messages"][-1].content
 
                 except Exception as e:
-                    response = f"Research failed: {e}"
+                    response = f"Research failed: {format_api_error(e)}"
 
             st.markdown(response)
 

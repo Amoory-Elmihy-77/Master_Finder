@@ -1,12 +1,11 @@
-from google import genai
-from google.genai import types
 from langchain.tools import tool
+from langchain_community.utilities import DuckDuckGoSearchAPIWrapper
 
-from config.settings import GEMINI_API_KEY, GEMINI_MODEL
+# Limit to 3 results to keep context small enough for Groq's free tier
+_search = DuckDuckGoSearchAPIWrapper(max_results=3)
 
-client = genai.Client(api_key=GEMINI_API_KEY)
-
-_grounding_tool = types.Tool(google_search=types.GoogleSearch())
+# Max characters to return from a single search call (~1 500 tokens)
+_MAX_CHARS = 3000
 
 
 @tool
@@ -21,32 +20,11 @@ def web_research(query: str) -> str:
     The query should be specific and should ask for official university
     sources whenever possible.
     """
-
-    response = client.models.generate_content(
-        model=GEMINI_MODEL,
-        contents=query,
-        config=types.GenerateContentConfig(
-            tools=[_grounding_tool],
-        ),
-    )
-
-    text = response.text or ""
-
-    sources = []
-
-    candidate = response.candidates[0] if response.candidates else None
-    metadata = getattr(candidate, "grounding_metadata", None) if candidate else None
-
-    if metadata and metadata.grounding_chunks:
-        for chunk in metadata.grounding_chunks:
-            web = getattr(chunk, "web", None)
-            if web and getattr(web, "uri", None):
-                sources.append(web.uri)
-
-    unique_sources = list(dict.fromkeys(sources))
-
-    if unique_sources:
-        text += "\n\nSources:\n"
-        text += "\n".join(f"- {url}" for url in unique_sources)
-
-    return text
+    try:
+        result = _search.run(query)
+        # Truncate so a single tool call can never blow the context window
+        if len(result) > _MAX_CHARS:
+            result = result[:_MAX_CHARS] + "\n[...truncated for length]"
+        return result
+    except Exception as e:
+        return f"Search failed: {e}"

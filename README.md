@@ -18,7 +18,7 @@ masterfinder-ai/
 ├── .gitignore
 │
 ├── config/
-│   └── settings.py           # env vars (GEMINI_API_KEY, GEMINI_MODEL)
+│   └── settings.py           # env vars (GROQ_API_KEY, GROQ_MODEL)
 │
 ├── models/                   # Pydantic schemas
 │   ├── program.py            # Program, ProgramSearchResult
@@ -33,7 +33,7 @@ masterfinder-ai/
 │
 ├── tools/
 │   └── web_search.py         # web_research: LangChain tool wrapping
-│                              # Gemini Google Search grounding
+│                              # DuckDuckGo Search
 │
 ├── agents/
 │   ├── research_agent.py     # one-shot research agent (no memory)
@@ -62,7 +62,7 @@ python -m venv .venv
 pip install -r requirements.txt
 
 cp .env.example .env
-# then edit .env and add your real GEMINI_API_KEY
+# then edit .env and add your real GROQ_API_KEY
 ```
 
 ## Run
@@ -119,23 +119,19 @@ keyed by a stable thread_id) → conversational memory across turns
 10. Uses the current LangChain 1.x agent API (`create_agent`) rather than
     the older `LLMChain` / `initialize_agent` / `ConversationBufferMemory`.
 
-## Free tier notes (Gemini)
+## Free tier notes (Groq & DuckDuckGo)
 
-- Get a free API key at https://aistudio.google.com/apikey — no credit card
+- Get a free API key at https://console.groq.com/keys — no credit card
   required.
-- `gemini-2.5-flash` (the default here) is on the free tier and includes a
-  daily quota of free Google Search grounding requests. Check your live
-  quota in AI Studio, since Google adjusts these numbers over time.
-- Source links returned by grounding are Google redirect URLs
-  (`vertexaisearch.cloud.google.com/...`) rather than the original site's
-  URL directly. They still resolve to the real page in a browser, but if
-  you need the raw destination URL you'll need to follow the redirect
-  server-side.
-- If you outgrow the free quota, either wait for the daily reset or switch
-  `GEMINI_MODEL` to a paid-tier call — no other code changes needed.
+- Groq provides lightning-fast inference on Llama 3 models entirely for free
+  (subject to rate limits).
+- We use the `DuckDuckGoSearchRun` tool for live web search, which is
+  100% free, requires no API keys, and has no strict quotas.
+- If you outgrow the free quota on Groq, either wait for the reset or
+  switch `GROQ_MODEL` to another provider by updating `services/model.py`.
 
 
-Streamlit → Gemini → PromptTemplate → web_research tool → agent →
+Streamlit → Groq (Llama 3) → PromptTemplate → web_research tool → agent →
 structured Program output → professors → CV upload/loader →
 CandidateProfile → CV/program matching → agent memory → UI polish →
 source validation → edge cases.
