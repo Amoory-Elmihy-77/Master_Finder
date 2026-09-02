@@ -1,10 +1,10 @@
 streamlit
 langchain
-langchain-openai
+langchain-google-genai
 langchain-community
 langgraph
 langgraph-checkpoint-sqlite
-openai
+google-genai
 pypdf
 pydantic
 python-dotenv

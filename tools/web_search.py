@@ -1,9 +1,12 @@
-from openai import OpenAI
+from google import genai
+from google.genai import types
 from langchain.tools import tool
 
-from config.settings import OPENAI_MODEL
+from config.settings import GEMINI_API_KEY, GEMINI_MODEL
 
-client = OpenAI()
+client = genai.Client(api_key=GEMINI_API_KEY)
+
+_grounding_tool = types.Tool(google_search=types.GoogleSearch())
 
 
 @tool
@@ -19,33 +22,26 @@ def web_research(query: str) -> str:
     sources whenever possible.
     """
 
-    response = client.responses.create(
-        model=OPENAI_MODEL,
-        tools=[
-            {
-                "type": "web_search",
-            }
-        ],
-        input=query,
+    response = client.models.generate_content(
+        model=GEMINI_MODEL,
+        contents=query,
+        config=types.GenerateContentConfig(
+            tools=[_grounding_tool],
+        ),
     )
 
-    text = response.output_text
+    text = response.text or ""
 
     sources = []
 
-    for item in response.output:
-        if getattr(item, "type", None) != "web_search_call":
-            continue
+    candidate = response.candidates[0] if response.candidates else None
+    metadata = getattr(candidate, "grounding_metadata", None) if candidate else None
 
-        action = getattr(item, "action", None)
-
-        if not action:
-            continue
-
-        for source in getattr(action, "sources", []) or []:
-            url = getattr(source, "url", None)
-            if url:
-                sources.append(url)
+    if metadata and metadata.grounding_chunks:
+        for chunk in metadata.grounding_chunks:
+            web = getattr(chunk, "web", None)
+            if web and getattr(web, "uri", None):
+                sources.append(web.uri)
 
     unique_sources = list(dict.fromkeys(sources))
 

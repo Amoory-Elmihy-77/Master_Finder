@@ -1,7 +1,7 @@
 # MasterFinder AI
 
 An agentic AI study-abroad research assistant built with Python, LangChain,
-OpenAI, and Streamlit.
+Google Gemini, and Streamlit.
 
 The system researches current Master's programs from official university
 sources, extracts structured program information, finds relevant academic
@@ -18,7 +18,7 @@ masterfinder-ai/
 ├── .gitignore
 │
 ├── config/
-│   └── settings.py           # env vars (OPENAI_API_KEY, OPENAI_MODEL)
+│   └── settings.py           # env vars (GEMINI_API_KEY, GEMINI_MODEL)
 │
 ├── models/                   # Pydantic schemas
 │   ├── program.py            # Program, ProgramSearchResult
@@ -33,7 +33,7 @@ masterfinder-ai/
 │
 ├── tools/
 │   └── web_search.py         # web_research: LangChain tool wrapping
-│                              # OpenAI Responses API web_search
+│                              # Gemini Google Search grounding
 │
 ├── agents/
 │   ├── research_agent.py     # one-shot research agent (no memory)
@@ -62,7 +62,7 @@ python -m venv .venv
 pip install -r requirements.txt
 
 cp .env.example .env
-# then edit .env and add your real OPENAI_API_KEY
+# then edit .env and add your real GEMINI_API_KEY
 ```
 
 ## Run
@@ -82,7 +82,7 @@ services.program_service.find_programs() / services.professor_service.find_profe
  ↓
 agents.research_agent (create_agent + web_research tool)
  ↓
-tools.web_search.web_research()  →  OpenAI Responses API web_search  →  live web
+tools.web_search.web_research()  →  Gemini Google Search grounding  →  live web
  ↓
 research text
  ↓
@@ -119,9 +119,23 @@ keyed by a stable thread_id) → conversational memory across turns
 10. Uses the current LangChain 1.x agent API (`create_agent`) rather than
     the older `LLMChain` / `initialize_agent` / `ConversationBufferMemory`.
 
-## Suggested build order (if extending further)
+## Free tier notes (Gemini)
 
-Streamlit → OpenAI → PromptTemplate → web_research tool → agent →
+- Get a free API key at https://aistudio.google.com/apikey — no credit card
+  required.
+- `gemini-2.5-flash` (the default here) is on the free tier and includes a
+  daily quota of free Google Search grounding requests. Check your live
+  quota in AI Studio, since Google adjusts these numbers over time.
+- Source links returned by grounding are Google redirect URLs
+  (`vertexaisearch.cloud.google.com/...`) rather than the original site's
+  URL directly. They still resolve to the real page in a browser, but if
+  you need the raw destination URL you'll need to follow the redirect
+  server-side.
+- If you outgrow the free quota, either wait for the daily reset or switch
+  `GEMINI_MODEL` to a paid-tier call — no other code changes needed.
+
+
+Streamlit → Gemini → PromptTemplate → web_research tool → agent →
 structured Program output → professors → CV upload/loader →
 CandidateProfile → CV/program matching → agent memory → UI polish →
 source validation → edge cases.
